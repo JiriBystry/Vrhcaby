@@ -1,74 +1,155 @@
 import random
 from typing import Any
+import json
 
 
 def main():
-    x = input("Cesta k JSON nebo napsat 'nova hra' k nove hre: ")
-    # if x == '':
-    # jaky_protihrac = input("Hrat proti AI/PC:" )
-    # if jaky_protihrac.lower() == 'AI':
-    hrac = Konzolovy_Hrac("Cerna", 0)
-    protihrac = Konzolovy_Hrac("Bila", 25)
-    hra = Hra(hrac, protihrac)
-    # LOAD / NOVA HRA
+    prvni, druhy = nahodna_barva_hrace()
+    protihrac = None
+    vstup = input("'vrhcaby.json' k nacteni nebo 'nova hra' k nove hre: ")
+    while vstup not in ['vrhcaby.json', 'nova hra']:
+        vstup = input("Spatny vstup zkuste: 'vrhcaby.json' k nacteni nebo 'nova hra' k nove hre: ")
+    if vstup == 'nova hra':
+        jaky_protihrac = input("Hrat proti AI nebo clovek: ")
+        while jaky_protihrac not in ['clovek', 'ai']:
+            jaky_protihrac = input("Spatny vstup zkuste: AI nebo clovek: ")
+        if jaky_protihrac.lower() == 'clovek':
+            protihrac = Konzolovy_Hrac(prvni[0], prvni[1])
+        elif jaky_protihrac.lower() == 'ai':
+            protihrac = AIHrac(prvni[0], prvni[1])
+        
+        hrac = Konzolovy_Hrac(druhy[0], druhy[1])
+        hra = Hra(pridej_hrace(hrac, protihrac))
+    else:
+        # load hry
+        pass
+
+def save_file():
+    pass
+
+
+def load_file():
+    pass
+
 
 def nahodna_barva_hrace() -> str:
-    return random.choices(["Cerna", "Bila"])
+    seznam = [("Bila", 25), ("Cerna", 0)]
+    random.shuffle(seznam)
+    return seznam
+
+def pridej_hrace(hrac1, hrac2) -> list:
+    hraci = []
+    if hrac1.barva_hrace == "Bila":
+        hraci.append(hrac1)
+        hraci.append(hrac2)
+    else:
+        hraci.append(hrac2)
+        hraci.append(hrac1)
+    return hraci
 
 
 class Hra:
-    def __init__(self, hrac: Any, protihrac: Any) -> None:
+    def __init__(self, hraci: Any) -> None:
         self._herni_deska = Herni_Deska()
         self._herni_deska.vytvor_kameny()
         self._dvojkostka = Dvojkostka()
-        self._hraci = [hrac, protihrac]
+        self._hraci = hraci
         self._current_player = 0
         self._zapni_hru = True
-        self.game_on()
+        self.zapni_hru()
 
-    def game_on(self) -> None:
+    def zapni_hru(self) -> None:
         while self._zapni_hru:
             self.zacatek_novyho_tahu()
+        else:
+            self.vypis_statistiky(self._hraci, self._herni_deska.herni_pole)
 
     def zacatek_novyho_tahu(self) -> None:    
         curr_player = self._hraci[self._current_player]
-        # vysledek_kostky = self._dvojkostka.hod_dvojkostkou()
-        vysledek_kostky = [1, 2]
+        vysledek_kostky = self._dvojkostka.hod_dvojkostkou()
+        #vysledek_kostky = [1,1,1,1]
         list_posunu = self.modify_list_posunu(curr_player.barva_hrace, list(vysledek_kostky))
         legal_moves = self.get_legal_moves(list_posunu, self._hraci[self._current_player])
-        self.vypis_hru(curr_player, vysledek_kostky, list_posunu, legal_moves)
+        self.vypis_hru(curr_player, self._hraci[self.next_player()], vysledek_kostky, list_posunu, legal_moves)
 
-        while len(legal_moves) != 0 and len(list_posunu) != 0:
-            # hracuv tah je legalni
-            curr_player = self._hraci[self._current_player]
-            hracuv_tah = curr_player.hrat_tah(legal_moves)
+        while len(list_posunu) != 0 and self._zapni_hru:
             
+            if not any(legal_moves.values()):
+                print("ZADNY MOZNY TAH")
+                break
+            
+            # str, str, list[int, int]
+            tah = curr_player.hrat_tah(legal_moves)
+
+            if tah == "ukoncit":
+                self._zapni_hru = False
+                break
+            if tah == "ulozit":
+                self.ulozit_hru()
+
+            aktulani_pozice, nova_pozice = tah
             # odečetení od listu_posunu
-            vzdalenost = hracuv_tah[1] - hracuv_tah[0]
+            vzdalenost = nova_pozice - aktulani_pozice
             if vzdalenost in list_posunu:
                 # JINEJ MOVE PRI MOVE Z BARU
-                self._herni_deska.move_kamen(hracuv_tah[0], hracuv_tah[1], curr_player, self._hraci[self.next_player()])
+                self._herni_deska.presun_kamen(aktulani_pozice, nova_pozice, curr_player, self._hraci[self.next_player()])
                     
                 list_posunu.remove(vzdalenost)
             else:
-                # komplexní move() (více jak 2x move)
-                self._herni_deska.is_valid_move()
-                pass
+                if len(set(list_posunu)) == 1:
+                    pocet = vzdalenost / list_posunu[0]
+                    while pocet > 0:
+                        nova_pozice = legal_moves.get(aktulani_pozice)[0]
+                        #print(f"{budouci_pozice, aktulani_pozice}")
+                        #print(f"LEGAL MOVES: {legal_moves.get(aktulani_pozice)}")
+                        self._herni_deska.presun_kamen(aktulani_pozice, nova_pozice, curr_player, self._hraci[self.next_player()])
+                        list_posunu.remove(nova_pozice - aktulani_pozice)
+                        aktulani_pozice = nova_pozice
+                        legal_moves = self.get_legal_moves(list_posunu, curr_player)
+                        pocet -= 1
+                else:
+                    while len(list_posunu) != 0:
+                        nova_pozice = legal_moves.get(aktulani_pozice)[0]
+                        #print(f"{budouci_pozice, aktulani_pozice}")
+                        #print(f"LEGAL MOVES: {legal_moves.get(aktulani_pozice)}")
+                        self._herni_deska.presun_kamen(aktulani_pozice, nova_pozice, curr_player, self._hraci[self.next_player()])
+                        list_posunu.remove(nova_pozice - aktulani_pozice)
+                        aktulani_pozice = nova_pozice
+                        legal_moves = self.get_legal_moves(list_posunu, curr_player)
                 
             legal_moves = self.get_legal_moves(list_posunu, curr_player)
-            self.vypis_hru(curr_player, vysledek_kostky, list_posunu, legal_moves)    
+            self.vypis_hru(curr_player, self._hraci[self.next_player()], vysledek_kostky, list_posunu, legal_moves)    
         else:
             self._current_player = self.next_player()
             # novy tah
 
-    def vypis_hru(self, curr_player: Any, vysledek_kostky: list, list_posunu: list, legal_moves: dict) -> None:
+    def vypis_hru(self, curr_player: Any, next_player: Any, vysledek_kostky: list, list_posunu: list, legal_moves: dict) -> None:
         print("---------------------------------------------------------")
+        print(f"{next_player} {next_player.bar}")
         print(self._herni_deska)
-        print(curr_player.bar)
+        print(f"{curr_player} {curr_player.bar}")
         print(f"Na tahu je {curr_player.barva_hrace}")
         print(f"Cisla na kostce: {vysledek_kostky}, posuny: {list_posunu}")
         print(f"Mozne tahy: {legal_moves}")
         print("---------------------------------------------------------")
+
+    def vypis_statistiky(self, hraci, herni_pole):
+        # pocet - vyhozenych, vyvedenych, opustenych kamenu
+        print("---------------------------------------------------------")
+        print("STATISTIKY")
+        for hrac in hraci:
+            print(f"Barva hrace: {hrac.barva_hrace}")
+            print(f"Bylo vyhozeno: {hrac.vyhozeno_kamenu}")
+            print(f"Vyvedeno kamenu: {herni_pole[hrac.index_domecku()].get_velikost()}")
+            print(f"Opusteno kamenu: {15 - herni_pole[hrac.index_domecku()].get_velikost()}")
+            print("------------")
+        print("---------------------------------------------------------")
+        ukoncit_hru = input("Pro ukonceni napiste 'ukoncit': ")
+        while ukoncit_hru != "ukoncit":
+            ukoncit_hru = input("Pro ukonceni napiste 'ukoncit': ")
+
+    def ulozit_hru(self):
+        pass
 
     def next_player(self):
         return (self._current_player + 1) % len(self._hraci)
@@ -79,10 +160,13 @@ class Hra:
     def modify_list_posunu(self, barva_hrace: str, list_posunu: int) -> list:
         return [-x for x in list_posunu] if barva_hrace == "Bila" else list_posunu
 
-
 class Herni_Deska:
     def __init__(self) -> None:
         self._herni_pole = self.vytvor_herni_pole()
+
+    @property
+    def herni_pole(self) -> list:
+        return self._herni_pole
 
     def vytvor_herni_pole(self) -> list:
         herni_pole = []
@@ -94,16 +178,17 @@ class Herni_Deska:
 
     def vytvor_kameny(self) -> None:
         #kameny = [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 0]
-        kameny = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0]
+        kameny = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         for i in range(len(kameny)):
             for _ in range(kameny[i]):
                     self._herni_pole[i].vloz_kamen(Kamen("Cerna", i))
                     self._herni_pole[len(kameny) - i - 1].vloz_kamen(Kamen("Bila", i))    
    
-    def move_kamen(self, aktualni_pozice: int, nova_pozice: int, hrac, protihrac) -> None:
+    def presun_kamen(self, aktualni_pozice: int, nova_pozice: int, hrac, protihrac) -> None:
         kamen1 = None
         if aktualni_pozice == hrac.bar.cislo_pole:
             kamen1 = hrac.bar.vytahni_kamen()
+            kamen1.vymaz_historii()
         else:
             kamen1 = self._herni_pole[aktualni_pozice].vytahni_kamen()
 
@@ -172,7 +257,7 @@ class Herni_Deska:
                 if pole.get_velikost() >= 1:
                     if pole.get_kamen().barva_kamene == barva_hrace:
                         if pole.cislo_pole < 19:
-                            print("INVALID MOVE")
+                            #print("INVALID MOVE")
                             return False
             return True
 
@@ -183,6 +268,9 @@ class Herni_Deska:
     def vyhod_kamen(self, pozice_kamene: int, hrac) -> None:
         kamen = self._herni_pole[pozice_kamene].vytahni_kamen()
         hrac.bar.vloz_kamen(kamen)
+        hrac.zvys_pocet_vyhozeno_kamenu()
+        kamen.zapis_pozici_do_historie("Bar")
+        print("Kamen byl vyhozen")
 
     def __str__(self) -> str:
         return "\n".join(str(pole) for pole in self._herni_pole)
@@ -201,6 +289,9 @@ class Kamen:
     @property
     def historie(self) -> list:
         return self._historie
+
+    def vymaz_historii(self) -> None:
+        self._historie = self._historie[-1:]
 
     def get_pozice_kamene(self) -> int:
         return self._historie[-1]
@@ -254,7 +345,7 @@ class Bar(Herni_Pole):
         super().__init__(i, max_size)
 
     def __str__(self) -> str:
-        return f"Na baru je {self.get_velikost()} kamenů"
+        return f"bar: {self.get_velikost()}"
     
 
 class Domecek(Herni_Pole):
@@ -266,9 +357,17 @@ class Domecek(Herni_Pole):
 
 
 class Hrac:
-    def __init__(self, barva_hrace, index_baru) -> None:
+    def __init__(self, barva_hrace, index_baru, vyhozeno_kamenu=0) -> None:
         self._barva_hrace = barva_hrace
         self._bar = Bar(index_baru, 15)
+        self._vyhozeno_kamenu = vyhozeno_kamenu
+
+    @property
+    def vyhozeno_kamenu(self):
+        return self._vyhozeno_kamenu
+    
+    def zvys_pocet_vyhozeno_kamenu(self):
+        self._vyhozeno_kamenu += 1
 
     @property
     def barva_hrace(self) -> str:
@@ -277,18 +376,23 @@ class Hrac:
     @property
     def bar(self) -> Bar:
         return self._bar
+    
+    def index_domecku(self) -> int:
+        return 0 if self._bar.cislo_pole == 25 else 25
 
     def __str__(self) -> str:
-        return f"Tento hráč hraje za barvu {self._barva_hrace}"
+        return f"{self._barva_hrace}"
 
 
 class Konzolovy_Hrac(Hrac):
     def __init__(self, barva_hrace, index_baru) -> None:
         super().__init__(barva_hrace, index_baru)
 
-    def hrat_tah(self, legal_moves: dict) -> list:
+    def hrat_tah(self, legal_moves: dict) -> Any:
         tah = check_input(input("Zadej tah: ").split(','))
         while True:
+            if tah[0] in ["ukoncit", "ulozit"]:
+                return tah[0]
             for key, values in legal_moves.items():
                 if tah[0] == key and tah[1] in values:
                     if tah[0] == "Bar":
@@ -299,15 +403,15 @@ class Konzolovy_Hrac(Hrac):
 
 
 class AIHrac(Hrac):
-    pass
+    def __init__(self, barva_hrace, index_baru) -> None:
+        super().__init__(barva_hrace, index_baru)
 
-
-class FileManager():
-    pass
-
-
-class StatisticsManager():
-    pass
+    def hrat_tah(self, legal_moves: dict) -> list:
+        random_key = random.choice(list(legal_moves.keys()))
+        random_value = random.choice(legal_moves.get(random_key))
+        if random_key == "Bar":
+            random_key = self.bar.cislo_pole
+        return [random_key, random_value]  
 
 
 class Dvojkostka:
