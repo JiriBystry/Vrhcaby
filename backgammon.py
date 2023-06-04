@@ -300,7 +300,7 @@ class Kamen:
         self._historie.append(nova_pozice)
 
     def __str__(self) -> str:
-        return f"{self._barva_kamene}"
+        return f"{self._barva_kamene[0]}"
 
 
 # modifikovany zasobnik
@@ -337,7 +337,7 @@ class Herni_Pole:
         return self._kameny
 
     def __str__(self) -> str:
-        return f"{self._cislo_pole}: {[str(kamen) for kamen in self._kameny]}"
+        return f"{self._cislo_pole}: {''.join([str(kamen) for kamen in self._kameny])}"
 
 
 class Bar(Herni_Pole):
