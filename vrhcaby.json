@@ -1,24 +1,27 @@
 {
     "hrac_na_tahu": 0,
     "list_posunu": [
-        -1,
-        -5
+        -4,
+        -4,
+        -4
     ],
     "vysledek_kostky": [
-        1,
-        5
+        4,
+        4,
+        4,
+        4
     ],
     "hraci": [
         {
             "barva_hrace": "Bila",
-            "vyhozeno_kamenu": 1,
+            "vyhozeno_kamenu": 2,
             "index_baru": 25,
             "pocet_na_baru": 0,
             "typ_hrace": "Konzolovy_Hrac"
         },
         {
             "barva_hrace": "Cerna",
-            "vyhozeno_kamenu": 1,
+            "vyhozeno_kamenu": 2,
             "index_baru": 0,
             "pocet_na_baru": 0,
             "typ_hrace": "AIHrac"
@@ -32,37 +35,38 @@
             ]
         },
         {
+            "barva_kamene": "Bila",
+            "historie": [
+                8,
+                2
+            ]
+        },
+        {
+            "barva_kamene": "Bila",
+            "historie": [
+                8,
+                2
+            ]
+        },
+        {
+            "barva_kamene": "Bila",
+            "historie": [
+                8,
+                2
+            ]
+        },
+        {
             "barva_kamene": "Cerna",
             "historie": [
-                1
-            ]
-        },
-        {
-            "barva_kamene": "Bila",
-            "historie": [
-                8,
-                2
-            ]
-        },
-        {
-            "barva_kamene": "Bila",
-            "historie": [
-                8,
-                2
-            ]
-        },
-        {
-            "barva_kamene": "Bila",
-            "historie": [
-                8,
-                2
+                1,
+                3
             ]
         },
         {
             "barva_kamene": "Cerna",
             "historie": [
                 "Bar",
-                3
+                5
             ]
         },
         {
@@ -92,6 +96,9 @@
         {
             "barva_kamene": "Bila",
             "historie": [
+                13,
+                8,
+                7,
                 6
             ]
         },
@@ -132,19 +139,6 @@
             ]
         },
         {
-            "barva_kamene": "Bila",
-            "historie": [
-                13
-            ]
-        },
-        {
-            "barva_kamene": "Cerna",
-            "historie": [
-                12,
-                15
-            ]
-        },
-        {
             "barva_kamene": "Cerna",
             "historie": [
                 12,
@@ -166,13 +160,15 @@
         {
             "barva_kamene": "Cerna",
             "historie": [
-                17
+                12,
+                18
             ]
         },
         {
             "barva_kamene": "Cerna",
             "historie": [
                 12,
+                15,
                 18
             ]
         },
@@ -202,9 +198,23 @@
             ]
         },
         {
+            "barva_kamene": "Bila",
+            "historie": [
+                "Bar",
+                21
+            ]
+        },
+        {
             "barva_kamene": "Cerna",
             "historie": [
                 19,
+                22
+            ]
+        },
+        {
+            "barva_kamene": "Cerna",
+            "historie": [
+                17,
                 22
             ]
         },
